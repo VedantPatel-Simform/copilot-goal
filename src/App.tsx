@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import "./App.css";
 
@@ -8,15 +8,55 @@ type Todo = {
   completed: boolean;
 };
 
+const STORAGE_KEY = "todo-app.todos";
+
 const initialTodos: Todo[] = [
   { id: 1, text: "Plan the day", completed: true },
   { id: 2, text: "Build the todo app", completed: false },
 ];
 
+function isTodo(value: unknown): value is Todo {
+  if (typeof value !== "object" || value === null) return false;
+  const obj = value as Record<string, unknown>;
+  return (
+    typeof obj.id === "number" &&
+    typeof obj.text === "string" &&
+    typeof obj.completed === "boolean"
+  );
+}
+
+function loadTodos(): Todo[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return initialTodos;
+    const parsed: unknown = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.every(isTodo)) {
+      return parsed;
+    }
+    // Stored value is malformed; clear it and fall back to defaults.
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // Ignore parse/storage errors and fall back to defaults.
+  }
+  return initialTodos;
+}
+
 function App() {
-  const [todos, setTodos] = useState<Todo[]>(initialTodos);
+  const [todos, setTodos] = useState<Todo[]>(loadTodos);
   const [newTodo, setNewTodo] = useState("");
   const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("localStorage" in window)) {
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+    } catch {
+      // Ignore persistence failures so the UI remains usable.
+    }
+  }, [todos]);
 
   const visibleTodos = useMemo(() => {
     if (filter === "active") {
