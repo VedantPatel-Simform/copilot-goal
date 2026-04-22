@@ -26,7 +26,15 @@ function App() {
   const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
 
   useEffect(() => {
-    localStorage.setItem("todos", JSON.stringify(todos));
+    if (typeof window === "undefined" || !("localStorage" in window)) {
+      return;
+    }
+
+    try {
+      window.localStorage.setItem("todos", JSON.stringify(todos));
+    } catch {
+      // Ignore persistence failures so the UI remains usable.
+    }
   }, [todos]);
 
   const visibleTodos = useMemo(() => {
