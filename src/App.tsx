@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import "./App.css";
 
@@ -14,9 +14,20 @@ const initialTodos: Todo[] = [
 ];
 
 function App() {
-  const [todos, setTodos] = useState<Todo[]>(initialTodos);
+  const [todos, setTodos] = useState<Todo[]>(() => {
+    try {
+      const raw = localStorage.getItem("todos");
+      return raw ? (JSON.parse(raw) as Todo[]) : initialTodos;
+    } catch {
+      return initialTodos;
+    }
+  });
   const [newTodo, setNewTodo] = useState("");
   const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
+
+  useEffect(() => {
+    localStorage.setItem("todos", JSON.stringify(todos));
+  }, [todos]);
 
   const visibleTodos = useMemo(() => {
     if (filter === "active") {
