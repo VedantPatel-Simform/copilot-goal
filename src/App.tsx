@@ -56,7 +56,7 @@ function App() {
     } catch {
       // Ignore persistence failures so the UI remains usable.
     }
-  }, []);
+  }, [todos]);
 
   const visibleTodos = useMemo(() => {
     if (filter === "active") {
