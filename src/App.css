@@ -126,6 +126,18 @@
   border: 1px solid var(--border);
   border-radius: 14px;
   background: var(--surface);
+  cursor: grab;
+  transition: opacity 0.15s ease, box-shadow 0.15s ease;
+}
+
+.todo-list li.is-dragging {
+  opacity: 0.4;
+  cursor: grabbing;
+}
+
+.todo-list li.is-drop-target {
+  border-color: var(--text);
+  box-shadow: 0 0 0 2px var(--text);
 }
 
 .todo-list label {

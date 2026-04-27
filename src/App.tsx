@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import type { FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { FormEvent, KeyboardEvent } from "react";
 import "./App.css";
 
 type Todo = {
@@ -45,6 +45,12 @@ function App() {
   const [todos, setTodos] = useState<Todo[]>(loadTodos);
   const [newTodo, setNewTodo] = useState("");
   const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
+  const [dragId, setDragId] = useState<number | null>(null);
+  const [dropTargetId, setDropTargetId] = useState<number | null>(null);
+  const [announcement, setAnnouncement] = useState("");
+  // Tracks an in-progress drag so the checkbox onChange guard fires correctly
+  // even after dragEnd clears dragId.
+  const isDraggingRef = useRef(false);
 
   useEffect(() => {
     if (typeof window === "undefined" || !("localStorage" in window)) {
@@ -93,6 +99,8 @@ function App() {
   };
 
   const toggleTodo = (id: number) => {
+    // Suppress toggle if the mouse-up was the end of a drag operation.
+    if (isDraggingRef.current) return;
     setTodos((currentTodos) =>
       currentTodos.map((todo) =>
         todo.id === id ? { ...todo, completed: !todo.completed } : todo,
@@ -108,8 +116,56 @@ function App() {
     setTodos((currentTodos) => currentTodos.filter((todo) => !todo.completed));
   };
 
+  const reorderTodos = (draggedId: number, targetId: number) => {
+    const draggedTodo = todos.find((t) => t.id === draggedId);
+    setTodos((current) => {
+      const from = current.findIndex((t) => t.id === draggedId);
+      const to = current.findIndex((t) => t.id === targetId);
+      if (from === -1 || to === -1 || from === to) return current;
+      const result = [...current];
+      const [item] = result.splice(from, 1);
+      result.splice(to, 0, item);
+      return result;
+    });
+    if (draggedTodo) {
+      setAnnouncement(`Moved "${draggedTodo.text}" to a new position.`);
+    }
+  };
+
+  const moveTodo = (id: number, direction: "up" | "down") => {
+    const todo = todos.find((t) => t.id === id);
+    setTodos((current) => {
+      const index = current.findIndex((t) => t.id === id);
+      const next = direction === "up" ? index - 1 : index + 1;
+      if (next < 0 || next >= current.length) return current;
+      const result = [...current];
+      const [item] = result.splice(index, 1);
+      result.splice(next, 0, item);
+      return result;
+    });
+    if (todo) {
+      setAnnouncement(`Moved "${todo.text}" ${direction}.`);
+    }
+  };
+
+  const handleItemKeyDown = (e: KeyboardEvent<HTMLLIElement>, id: number) => {
+    // Keyboard reorder is only meaningful on the unfiltered list.
+    if (filter !== "all") return;
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      moveTodo(id, "up");
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      moveTodo(id, "down");
+    }
+  };
+
   return (
     <main className="app-shell">
+      {/* Live region announces drag/keyboard reorder results to screen readers */}
+      <div aria-live="polite" aria-atomic="true" className="sr-only">
+        {announcement}
+      </div>
       <section className="todo-app" aria-labelledby="todo-title">
         <header className="todo-header">
           <p className="eyebrow">Minimal todo</p>
@@ -156,10 +212,55 @@ function App() {
           {visibleTodos.length === 0 ? (
             <li className="empty-state">No todos for this filter.</li>
           ) : (
-            visibleTodos.map((todo) => (
+            visibleTodos.map((todo, index) => (
               <li
                 key={todo.id}
-                className={todo.completed ? "is-completed" : ""}
+                role="listitem"
+                tabIndex={0}
+                aria-label={`${todo.text}, item ${index + 1} of ${visibleTodos.length}${todo.completed ? ", completed" : ""}`}
+                aria-grabbed={dragId === todo.id ? true : undefined}
+                className={[
+                  todo.completed ? "is-completed" : "",
+                  dragId === todo.id ? "is-dragging" : "",
+                  dropTargetId === todo.id && dragId !== todo.id
+                    ? "is-drop-target"
+                    : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                draggable={filter === "all"}
+                onDragStart={() => {
+                  isDraggingRef.current = true;
+                  setDragId(todo.id);
+                }}
+                onDragEnd={() => {
+                  setDragId(null);
+                  setDropTargetId(null);
+                  // Delay clearing so any synthetic click fired after dragEnd
+                  // is still suppressed in toggleTodo.
+                  setTimeout(() => {
+                    isDraggingRef.current = false;
+                  }, 0);
+                }}
+                onDragOver={(e) => e.preventDefault()}
+                onDragEnter={() => {
+                  if (dragId !== null && dragId !== todo.id) {
+                    setDropTargetId(todo.id);
+                  }
+                }}
+                onDragLeave={(e) => {
+                  // Only clear when leaving the <li> itself, not a child element.
+                  if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                    setDropTargetId(null);
+                  }
+                }}
+                onDrop={() => {
+                  if (dragId !== null) {
+                    reorderTodos(dragId, todo.id);
+                    setDropTargetId(null);
+                  }
+                }}
+                onKeyDown={(e) => handleItemKeyDown(e, todo.id)}
               >
                 <label>
                   <input
