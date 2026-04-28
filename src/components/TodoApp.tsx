@@ -1,0 +1,190 @@
+import { useEffect, useMemo, useState } from "react";
+import type { FormEvent } from "react";
+import type { Session } from "../types";
+import { clearSession } from "../auth";
+
+type Todo = {
+  id: number;
+  text: string;
+  completed: boolean;
+};
+
+function storageKey(userId: number): string {
+  return `todo-app.todos.${userId}`;
+}
+
+function isTodo(value: unknown): value is Todo {
+  if (typeof value !== "object" || value === null) return false;
+  const obj = value as Record<string, unknown>;
+  return (
+    typeof obj.id === "number" &&
+    typeof obj.text === "string" &&
+    typeof obj.completed === "boolean"
+  );
+}
+
+const initialTodos: Todo[] = [
+  { id: 1, text: "Plan the day", completed: true },
+  { id: 2, text: "Build the todo app", completed: false },
+];
+
+function loadTodos(userId: number): Todo[] {
+  try {
+    const raw = localStorage.getItem(storageKey(userId));
+    if (!raw) return initialTodos;
+    const parsed: unknown = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.every(isTodo)) return parsed;
+    localStorage.removeItem(storageKey(userId));
+  } catch {
+    // Ignore parse/storage errors.
+  }
+  return initialTodos;
+}
+
+type Props = {
+  session: Session;
+  onLogout: () => void;
+};
+
+export default function TodoApp({ session, onLogout }: Props) {
+  const [todos, setTodos] = useState<Todo[]>(() => loadTodos(session.userId));
+  const [newTodo, setNewTodo] = useState("");
+  const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("localStorage" in window)) return;
+    try {
+      window.localStorage.setItem(storageKey(session.userId), JSON.stringify(todos));
+    } catch {
+      // Ignore persistence failures.
+    }
+  }, [todos, session.userId]);
+
+  const visibleTodos = useMemo(() => {
+    if (filter === "active") return todos.filter((t) => !t.completed);
+    if (filter === "completed") return todos.filter((t) => t.completed);
+    return todos;
+  }, [filter, todos]);
+
+  const remainingCount = todos.filter((t) => !t.completed).length;
+  const completedCount = todos.length - remainingCount;
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const trimmedTodo = newTodo.trim();
+    if (!trimmedTodo) return;
+    setTodos((current) => [
+      { id: Date.now(), text: trimmedTodo, completed: false },
+      ...current,
+    ]);
+    setNewTodo("");
+  };
+
+  const toggleTodo = (id: number) => {
+    setTodos((current) =>
+      current.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t))
+    );
+  };
+
+  const deleteTodo = (id: number) => {
+    setTodos((current) => current.filter((t) => t.id !== id));
+  };
+
+  const clearCompleted = () => {
+    setTodos((current) => current.filter((t) => !t.completed));
+  };
+
+  const handleLogout = () => {
+    clearSession();
+    onLogout();
+  };
+
+  return (
+    <main className="app-shell">
+      <section className="todo-app" aria-labelledby="todo-title">
+        <header className="todo-header">
+          <div className="page-nav">
+            <div>
+              <p className="eyebrow">Minimal todo</p>
+              <h1 id="todo-title">Tasks for today</h1>
+            </div>
+            <div className="nav-actions">
+              <span className="nav-user">Hi, {session.username}</span>
+              <button type="button" onClick={handleLogout}>
+                Sign out
+              </button>
+            </div>
+          </div>
+          <p className="subtitle">
+            A simple React + TypeScript todo list with clean, focused controls.
+          </p>
+        </header>
+
+        <form className="todo-form" onSubmit={handleSubmit}>
+          <label className="sr-only" htmlFor="new-todo">
+            New todo
+          </label>
+          <input
+            id="new-todo"
+            type="text"
+            value={newTodo}
+            onChange={(event) => setNewTodo(event.target.value)}
+            placeholder="Add a task"
+            autoComplete="off"
+          />
+          <button type="submit">Add</button>
+        </form>
+
+        <div className="todo-meta" aria-live="polite">
+          <span>{remainingCount} remaining</span>
+          <span>{completedCount} completed</span>
+        </div>
+
+        <div className="todo-filters" role="tablist" aria-label="Todo filters">
+          {(["all", "active", "completed"] as const).map((option) => (
+            <button
+              key={option}
+              type="button"
+              className={option === filter ? "is-active" : ""}
+              onClick={() => setFilter(option)}
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+
+        <ul className="todo-list" aria-label="Todo items">
+          {visibleTodos.length === 0 ? (
+            <li className="empty-state">No todos for this filter.</li>
+          ) : (
+            visibleTodos.map((todo) => (
+              <li key={todo.id} className={todo.completed ? "is-completed" : ""}>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={todo.completed}
+                    onChange={() => toggleTodo(todo.id)}
+                  />
+                  <span>{todo.text}</span>
+                </label>
+                <button type="button" onClick={() => deleteTodo(todo.id)}>
+                  Delete
+                </button>
+              </li>
+            ))
+          )}
+        </ul>
+
+        <footer className="todo-footer">
+          <button
+            type="button"
+            onClick={clearCompleted}
+            disabled={completedCount === 0}
+          >
+            Clear completed
+          </button>
+        </footer>
+      </section>
+    </main>
+  );
+}
