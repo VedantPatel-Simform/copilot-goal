@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import type { Session } from "../types";
 import { clearSession } from "../auth";
@@ -51,7 +51,13 @@ export default function TodoApp({ session, onLogout }: Props) {
   const [newTodo, setNewTodo] = useState("");
   const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
 
+  const isFirstRender = useRef(true);
+
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
     if (typeof window === "undefined" || !("localStorage" in window)) return;
     try {
       window.localStorage.setItem(storageKey(session.userId), JSON.stringify(todos));

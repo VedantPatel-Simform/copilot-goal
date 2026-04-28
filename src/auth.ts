@@ -47,13 +47,17 @@ export function saveUsers(users: User[]): void {
 /** Returns the matching user or null if credentials are invalid. */
 export function findUser(username: string, password: string): User | null {
   if (
-    username === ADMIN_USER.username &&
+    username.toLowerCase() === ADMIN_USER.username.toLowerCase() &&
     password === ADMIN_USER.password
   ) {
     return ADMIN_USER;
   }
   const users = loadUsers();
-  return users.find((u) => u.username === username && u.password === password) ?? null;
+  return (
+    users.find(
+      (u) => u.username.toLowerCase() === username.toLowerCase() && u.password === password
+    ) ?? null
+  );
 }
 
 export function loadSession(): Session | null {
