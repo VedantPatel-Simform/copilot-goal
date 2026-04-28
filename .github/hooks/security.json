@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "type": "command",
+        "bash": "./.github/hooks/scripts/log-tool-use.sh",
+        "timeoutSec": 5
+      }
+    ],
+    "sessionStart": [
+      {
+        "type": "command",
+        "bash": "./.github/hooks/scripts/log-session-start.sh",
+        "timeoutSec": 5
+      }
+    ]
+  }
+}
