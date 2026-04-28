@@ -172,6 +172,229 @@
   opacity: 0.45;
 }
 
+/* ── Auth panel (login / admin) ──────────────────────────────────────── */
+
+.auth-panel {
+  width: min(100%, 520px);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  padding: 28px;
+}
+
+.admin-panel {
+  width: min(100%, 680px);
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-field label {
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.form-field input {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+
+.form-field input:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+
+.form-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.form-row .form-field {
+  flex: 1;
+  min-width: 140px;
+}
+
+.form-row-btn {
+  flex-shrink: 0;
+  align-self: flex-end;
+}
+
+.btn-primary {
+  border: 1px solid var(--text);
+  border-radius: 12px;
+  padding: 14px 20px;
+  background: var(--text);
+  color: var(--bg);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.btn-primary:hover {
+  opacity: 0.85;
+}
+
+.auth-error {
+  margin: 0;
+  color: #c0392b;
+  font-size: 0.9rem;
+}
+
+.auth-success {
+  margin: 0;
+  color: #27ae60;
+  font-size: 0.9rem;
+}
+
+/* ── Page nav bar ───────────────────────────────────────────────────── */
+
+.page-nav {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.nav-user {
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.nav-actions button {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px 14px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.nav-actions button:hover {
+  border-color: var(--text);
+}
+
+/* ── Section title ──────────────────────────────────────────────────── */
+
+.section-title {
+  margin: 24px 0 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+/* ── User list ──────────────────────────────────────────────────────── */
+
+.user-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.user-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.user-name {
+  flex: 1;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.user-role {
+  font-size: 0.8rem;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 2px 8px;
+}
+
+.user-item button {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 6px 12px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.user-item button:hover {
+  border-color: #c0392b;
+  color: #c0392b;
+}
+
+.empty-state-text {
+  color: var(--muted);
+  margin: 8px 0;
+}
+
+/* ── Responsive adjustments ─────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .form-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .page-nav {
+    flex-direction: column;
+  }
+
+  .nav-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+/* ── Screen reader only ─────────────────────────────────────────────── */
+
 .sr-only {
   position: absolute;
   width: 1px;
